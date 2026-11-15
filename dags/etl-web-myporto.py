@@ -14,7 +14,7 @@ default_args = {
 }
 
 # Tentukan Project ID Google Cloud Anda di sini
-PROJECT_ID = 'proyek-anda' 
+PROJECT_ID = 'project-6b44e885-577a-4e5b-82a' 
 DATASET_ID = 'MyDataset'
 
 with DAG(
