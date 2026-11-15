@@ -13,21 +13,20 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-# Tentukan Project ID Google Cloud Anda di sini agar tidak perlu menulis ulang
-PROJECT_ID = 'project-6b44e885-577a-4e5b-82a' 
+# Tentukan Project ID Google Cloud Anda di sini
+PROJECT_ID = 'proyek-anda' 
 DATASET_ID = 'MyDataset'
 
 with DAG(
     'postgres_to_bigquery_full_etl',
     default_args=default_args,
     description='ETL lengkap dari PostgreSQL MyPorto ke BigQuery Big Dataset',
-    schedule_interval='@daily',
+    schedule='@daily',  # Diubah dari schedule_interval menjadi schedule
     start_date=datetime(2026, 1, 1),
     catchup=False,
     tags=['etl', 'postgres', 'bigquery', 'myporto'],
 ) as dag:
 
-    # Fungsi reusable (bisa dipakai bersama untuk semua tabel)
     def run_etl_table(postgres_table, bq_table):
         # 1. EXTRACT dari PostgreSQL (Connection ID: '1')
         pg_hook = PostgresHook(postgres_conn_id='1')
@@ -45,10 +44,9 @@ with DAG(
         bq_hook.insert_rows_from_dataframe(
             table_id=destination_table,
             dataframe=df,
-            if_exists='replace' # Anda bisa ubah ke 'append' jika datanya bertambah terus
+            if_exists='replace'
         )
 
-    # Definisi Task untuk masing-masing tabel
     @task(task_id='etl_users')
     def task_users():
         run_etl_table('Users', 'dim_users')
@@ -69,5 +67,5 @@ with DAG(
     def task_projects():
         run_etl_table('Projects', 'fact_projects')
 
-    # Menjalankan seluruh task secara bersamaan (paralel)
+    # Menjalankan seluruh task
     task_users() >> [task_certificates(), task_educations(), task_experiences(), task_projects()]
