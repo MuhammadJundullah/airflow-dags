@@ -43,16 +43,18 @@ def run_etl_table(postgres_table: str, bq_table: str):
     pg_hook = PostgresHook(postgres_conn_id="1")
     real_name = resolve_table_name(pg_hook, postgres_table)
     engine = pg_hook.get_sqlalchemy_engine()
-    # Tanda kutip ganda + nama asli = cocok persis dengan tabel di database
     df = pd.read_sql(f'SELECT * FROM {PG_SCHEMA}."{real_name}";', engine)
 
     # 2. TRANSFORM
     df.columns = [col.lower() for col in df.columns]
 
-    # 3. LOAD (replace isi tabel BigQuery)
+    # 3. LOAD (hapus tabel lama dulu, lalu buat ulang dari dataframe)
     bq_hook = BigQueryHook(gcp_conn_id="2", use_legacy_sql=False)
     client = bq_hook.get_client(project_id=PROJECT_ID)
     destination = f"{PROJECT_ID}.{DATASET_ID}.{bq_table}"
+
+    client.delete_table(destination, not_found_ok=True)  # <-- BARIS BARU
+
     job = client.load_table_from_dataframe(
         df,
         destination,
@@ -63,7 +65,7 @@ def run_etl_table(postgres_table: str, bq_table: str):
 
 
 with DAG(
-    dag_id="postgres_to_bigquery_full_etl_V7",
+    dag_id="postgres_to_bigquery_full_etl_V8",
     default_args=default_args,
     description="ETL lengkap dari PostgreSQL MyPorto ke BigQuery",
     schedule="@daily",
