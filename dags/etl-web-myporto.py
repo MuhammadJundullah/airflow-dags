@@ -17,7 +17,7 @@ PROJECT_ID = 'project-6b44e885-577a-4e5b-82a'
 DATASET_ID = 'MyDataset'
 
 with DAG(
-    'postgres_to_bigquery_full_etl_V5',
+    'postgres_to_bigquery_full_etl_V6',
     default_args=default_args,
     description='ETL lengkap dari PostgreSQL MyPorto ke BigQuery Big Dataset',
     schedule='@daily',
@@ -30,11 +30,11 @@ with DAG(
         pg_hook = PostgresHook(postgres_conn_id='1')
         engine = pg_hook.get_sqlalchemy_engine()
         
-        # Menggunakan nama asli dengan tanda kutip ganda agar sensitif terhadap huruf kapital/kecil
-        sql = f'SELECT * FROM public."{postgres_table}";'
+        # PERBAIKAN DI SINI: Tanpa tanda kutip ganda agar Postgres membaca tabel lowercase dengan fleksibel
+        table_name = postgres_table.lower()
+        sql = f'SELECT * FROM public.{table_name};'
         df = pd.read_sql(sql, engine)
         
-        # Menyamakan nama kolom menjadi huruf kecil semua untuk standar BigQuery
         df.columns = [col.lower() for col in df.columns]
         
         bq_hook = BigQueryHook(gcp_conn_id='2', use_legacy_sql=False)
@@ -78,7 +78,6 @@ with DAG(
     def task_techstack():
         run_etl_table('TechStack', 'dim_techstack')
 
-    # Menjalankan seluruh task secara paralel
     task_users() >> [
         task_certificates(), 
         task_educations(), 
