@@ -17,7 +17,7 @@ PROJECT_ID = 'project-6b44e885-577a-4e5b-82a'
 DATASET_ID = 'MyDataset'
 
 with DAG(
-    'postgres_to_bigquery_full_etl_V4',
+    'postgres_to_bigquery_full_etl_V5',
     default_args=default_args,
     description='ETL lengkap dari PostgreSQL MyPorto ke BigQuery Big Dataset',
     schedule='@daily',
@@ -30,11 +30,11 @@ with DAG(
         pg_hook = PostgresHook(postgres_conn_id='1')
         engine = pg_hook.get_sqlalchemy_engine()
         
-        # Memastikan nama tabel di-lowercase dan tidak memakai kutip ganda yang kaku
-        table_name = postgres_table.lower()
-        sql = f'SELECT * FROM public."{table_name}";'
+        # Menggunakan nama asli dengan tanda kutip ganda agar sensitif terhadap huruf kapital/kecil
+        sql = f'SELECT * FROM public."{postgres_table}";'
         df = pd.read_sql(sql, engine)
         
+        # Menyamakan nama kolom menjadi huruf kecil semua untuk standar BigQuery
         df.columns = [col.lower() for col in df.columns]
         
         bq_hook = BigQueryHook(gcp_conn_id='2', use_legacy_sql=False)
@@ -66,4 +66,25 @@ with DAG(
     def task_projects():
         run_etl_table('Projects', 'fact_projects')
 
-    task_users() >> [task_certificates(), task_educations(), task_experiences(), task_projects()]
+    @task(task_id='etl_about')
+    def task_about():
+        run_etl_table('About', 'dim_about')
+
+    @task(task_id='etl_jobdesk')
+    def task_jobdesk():
+        run_etl_table('Jobdesk', 'dim_jobdesk')
+
+    @task(task_id='etl_techstack')
+    def task_techstack():
+        run_etl_table('TechStack', 'dim_techstack')
+
+    # Menjalankan seluruh task secara paralel
+    task_users() >> [
+        task_certificates(), 
+        task_educations(), 
+        task_experiences(), 
+        task_projects(),
+        task_about(),
+        task_jobdesk(),
+        task_techstack()
+    ]
