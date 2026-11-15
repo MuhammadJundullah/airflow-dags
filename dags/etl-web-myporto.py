@@ -31,7 +31,8 @@ with DAG(
         pg_hook = PostgresHook(postgres_conn_id='1')
         engine = pg_hook.get_sqlalchemy_engine()
         
-        sql = f'SELECT * FROM public."{postgres_table}";'
+        # Ubah nama tabel menjadi huruf kecil (lowercase) agar sesuai dengan standar Postgres
+        sql = f'SELECT * FROM public."{postgres_table.lower()}";'
         df = pd.read_sql(sql, engine)
         
         # 2. TRANSFORM: Ubah nama kolom jadi huruf kecil standar BigQuery
