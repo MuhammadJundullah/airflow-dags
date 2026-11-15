@@ -13,7 +13,6 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-# Tentukan Project ID Google Cloud Anda di sini
 PROJECT_ID = 'project-6b44e885-577a-4e5b-82a' 
 DATASET_ID = 'MyDataset'
 
@@ -21,13 +20,13 @@ with DAG(
     'postgres_to_bigquery_full_etl',
     default_args=default_args,
     description='ETL lengkap dari PostgreSQL MyPorto ke BigQuery Big Dataset',
-    schedule='@daily',  # Diubah dari schedule_interval menjadi schedule
+    schedule='@daily',
     start_date=datetime(2026, 1, 1),
     catchup=False,
     tags=['etl', 'postgres', 'bigquery', 'myporto'],
 ) as dag:
 
-   def run_etl_table(postgres_table, bq_table):
+    def run_etl_table(postgres_table, bq_table):
         # 1. EXTRACT dari PostgreSQL menggunakan SQLAlchemy Engine (Connection ID: '1')
         pg_hook = PostgresHook(postgres_conn_id='1')
         engine = pg_hook.get_sqlalchemy_engine()
