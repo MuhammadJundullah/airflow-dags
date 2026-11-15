@@ -27,12 +27,13 @@ with DAG(
     tags=['etl', 'postgres', 'bigquery', 'myporto'],
 ) as dag:
 
-    def run_etl_table(postgres_table, bq_table):
-        # 1. EXTRACT dari PostgreSQL (Connection ID: '1')
+   def run_etl_table(postgres_table, bq_table):
+        # 1. EXTRACT dari PostgreSQL menggunakan SQLAlchemy Engine (Connection ID: '1')
         pg_hook = PostgresHook(postgres_conn_id='1')
+        engine = pg_hook.get_sqlalchemy_engine()
+        
         sql = f'SELECT * FROM public."{postgres_table}";'
-        connection = pg_hook.get_conn()
-        df = pd.read_sql(sql, connection)
+        df = pd.read_sql(sql, engine)
         
         # 2. TRANSFORM: Ubah nama kolom jadi huruf kecil standar BigQuery
         df.columns = [col.lower() for col in df.columns]
