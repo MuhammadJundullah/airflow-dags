@@ -75,7 +75,7 @@ def run_etl_table(postgres_table: str, bq_table: str):
 
 
 with DAG(
-    dag_id="postgres_to_bigquery_full_etl_V8",
+    dag_id="postgres_to_bigquery_full_etl_V9",
     default_args=default_args,
     description="ETL lengkap dari PostgreSQL MyPorto ke BigQuery",
     schedule="@daily",
