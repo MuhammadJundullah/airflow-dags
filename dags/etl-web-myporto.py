@@ -48,12 +48,22 @@ def run_etl_table(postgres_table: str, bq_table: str):
     # 2. TRANSFORM
     df.columns = [col.lower() for col in df.columns]
 
-    # 3. LOAD (hapus tabel lama dulu, lalu buat ulang dari dataframe)
+    # String kosong / hanya spasi -> NULL
+    for col in df.select_dtypes(include=["object", "string"]).columns:
+        df[col] = df[col].apply(
+            lambda v: None if isinstance(v, str) and v.strip() == "" else v
+        )
+        # Kolom yang seluruhnya kosong: paksa tipe string,
+        # supaya BigQuery tidak gagal menebak tipe kolom
+        if df[col].isna().all():
+            df[col] = df[col].astype("string")
+
+    # 3. LOAD
     bq_hook = BigQueryHook(gcp_conn_id="2", use_legacy_sql=False)
     client = bq_hook.get_client(project_id=PROJECT_ID)
     destination = f"{PROJECT_ID}.{DATASET_ID}.{bq_table}"
 
-    client.delete_table(destination, not_found_ok=True)  # <-- BARIS BARU
+    client.delete_table(destination, not_found_ok=True)
 
     job = client.load_table_from_dataframe(
         df,
